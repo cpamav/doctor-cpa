@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ข้อมูลแพทย์ปฏิบัติงาน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sarabun', sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 16px; }
+
+  .header { background: linear-gradient(135deg, #2c3e8c 0%, #1a2563 100%); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 12px rgba(44,62,140,0.3); }
+  .header img { height: 44px; object-fit: contain; flex-shrink: 0; }
+  .header h1 { font-size: 16px; font-weight: 700; line-height: 1.3; }
+  .header p { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+
+  .stats { background: #fff; display: flex; border-bottom: 2px solid #e8eaf0; }
+  .stat { flex: 1; text-align: center; padding: 14px 8px; border-right: 1px solid #e8eaf0; cursor: pointer; transition: background .2s; user-select: none; }
+  .stat:last-child { border-right: none; }
+  .stat:hover { background: #f4f6fb; }
+  .stat.active-stat { background: #eef2ff; border-bottom: 3px solid #2c3e8c; }
+  .stat-num { font-size: 26px; font-weight: 800; color: #2c3e8c; }
+  .stat-num.orange { color: #e67e22; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+
+  /* ===== MOBILE ===== */
+  .mobile-only { display: block; }
+  .desktop-only { display: none; }
+
+  .filter-bar { background: #fff; padding: 10px 16px; border-bottom: 1px solid #e0e4f0; display: flex; gap: 8px; align-items: center; }
+  .btn-filter-toggle { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid #dde1ed; border-radius: 8px; background: #f8f9fd; font-size: 14px; font-family: inherit; cursor: pointer; color: #2c3e8c; font-weight: 600; white-space: nowrap; }
+  .search-wrap-inline { position: relative; flex: 1; }
+  .search-wrap-inline .ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 13px; }
+  .search-inline { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid #dde1ed; border-radius: 8px; font-size: 14px; font-family: inherit; background: #f8f9fd; }
+  .search-inline:focus { outline: none; border-color: #2c3e8c; }
+
+  .filter-drawer { background: #fff; border-bottom: 1px solid #e0e4f0; padding: 0 16px; max-height: 0; overflow: hidden; transition: max-height .3s ease, padding .3s ease; }
+  .filter-drawer.open { max-height: 400px; padding: 16px; }
+
+  .filter-group { margin-bottom: 14px; }
+  .filter-label { font-size: 12px; color: #666; margin-bottom: 6px; display: block; font-weight: 600; }
+  select { width: 100%; padding: 10px 12px; border: 1px solid #dde1ed; border-radius: 8px; font-size: 15px; font-family: inherit; background: #f8f9fd; color: #333; cursor: pointer; }
+  select:focus { outline: none; border-color: #2c3e8c; }
+  .btn-reset { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #f0f2f5; color: #555; font-size: 14px; cursor: pointer; font-family: inherit; }
+
+  /* CARDS */
+  .cards-wrap { padding: 12px; }
+  .card { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .card-name { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+  .card-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .card-field { font-size: 13px; color: #444; }
+  .card-field span { color: #999; font-size: 12px; }
+  .card-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .card-branch { font-size: 12px; color: #3451b2; background: #eef2ff; padding: 3px 10px; border-radius: 20px; }
+
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .badge-status-active   { background: #fef3c7; color: #92400e; }
+  .badge-status-inactive { background: #fee2e2; color: #991b1b; }
+  .badge-status-other    { background: #f0fdf4; color: #166534; }
+
+  .center { text-align: center; padding: 60px 20px; color: #999; font-size: 15px; }
+  .spinner { display: inline-block; width: 36px; height: 36px; border: 3px solid #e0e3ea; border-top-color: #2c3e8c; border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .pagination { display: flex; gap: 6px; justify-content: center; margin: 12px 0; align-items: center; flex-wrap: wrap; padding: 0 12px; }
+  .pagination button { padding: 8px 14px; border: 1px solid #dde1ed; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; font-family: inherit; }
+  .pagination button:hover:not(:disabled) { background: #2c3e8c; color: white; border-color: #2c3e8c; }
+  .pagination button.active { background: #2c3e8c; color: white; border-color: #2c3e8c; }
+  .pagination button:disabled { opacity: .4; cursor: default; }
+  .page-info { width: 100%; text-align: center; font-size: 13px; color: #888; margin-bottom: 4px; }
+
+  /* ===== DESKTOP ===== */
+  .desktop-layout { display: flex; min-height: calc(100vh - 160px); }
+  .sidebar { width: 280px; min-width: 260px; background: #fff; border-right: 1px solid #e0e4f0; padding: 20px 16px; }
+  .sidebar h3 { font-size: 15px; font-weight: 700; color: #2c3e8c; margin-bottom: 16px; }
+  .sidebar .filter-group { margin-bottom: 18px; }
+  .sidebar select { font-size: 14px; padding: 9px 12px; }
+  .search-wrap { position: relative; }
+  .search-wrap input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid #dde1ed; border-radius: 8px; font-size: 14px; font-family: inherit; background: #f8f9fd; }
+  .search-wrap input:focus { outline: none; border-color: #2c3e8c; background: #fff; }
+  .search-wrap .ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #aaa; }
+  .btn-reset-desk { width: 100%; padding: 9px; border: none; border-radius: 8px; background: #f0f2f5; color: #555; font-size: 14px; cursor: pointer; font-family: inherit; margin-top: 4px; }
+  .btn-reset-desk:hover { background: #e0e3ea; }
+  .desktop-main { flex: 1; padding: 20px; overflow-x: auto; }
+  .table-wrap { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+  thead th { background: #2c3e8c; color: white; padding: 12px 14px; text-align: center; font-size: 13px; font-weight: 600; }
+  thead th:first-child { min-width: 240px; text-align: left; }
+  tbody tr { border-bottom: 1px solid #f0f2f5; transition: background .15s; }
+  tbody tr:hover { background: #f4f6fb; }
+  tbody td { padding: 12px 14px; font-size: 14px; vertical-align: middle; }
+  tbody td:first-child { min-width: 240px; white-space: nowrap; }
+  .desktop-pagination { display: flex; gap: 6px; justify-content: flex-end; margin-top: 16px; align-items: center; }
+  .desktop-pagination button { padding: 6px 12px; border: 1px solid #dde1ed; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .desktop-pagination button:hover:not(:disabled) { background: #2c3e8c; color: white; border-color: #2c3e8c; }
+  .desktop-pagination button.active { background: #2c3e8c; color: white; border-color: #2c3e8c; }
+  .desktop-pagination button:disabled { opacity: .4; cursor: default; }
+  .page-info-desk { font-size: 13px; color: #888; margin-right: auto; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="https://raw.githubusercontent.com/abeltonyx/myimg/refs/heads/main/LogoHosOrangeWhite.png">
+  <div>
+    <h1>ข้อมูลแพทย์ปฏิบัติงาน และระหว่างลาศึกษา</h1>
+    <p>โรงพยาบาลเจ้าพระยาอภัยภูเบศร จังหวัดปราจีนบุรี</p>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat active-stat" id="stat-result" onclick="statClick('all')"><div class="stat-num orange" id="st-result">-</div><div class="stat-label">ผลการค้นหา</div></div>
+  <div class="stat" id="stat-active" onclick="statClick('active')"><div class="stat-num" id="st-active">-</div><div class="stat-label">ปฏิบัติงาน</div></div>
+  <div class="stat" id="stat-study" onclick="statClick('study')"><div class="stat-num" id="st-study">-</div><div class="stat-label">ลาศึกษา</div></div>
+</div>
+
+<!-- MOBILE -->
+<div class="mobile-only" id="mobile-section">
+  <div class="filter-bar">
+    <button class="btn-filter-toggle" onclick="toggleDrawer()">☰ กรอง</button>
+    <div class="search-wrap-inline">
+      <span class="ico">🔍</span>
+      <input class="search-inline" type="text" id="search-m" placeholder="ค้นหาชื่อ..." oninput="applyFilter()">
+    </div>
+  </div>
+  <div class="filter-drawer" id="drawer">
+    <div class="filter-group">
+      <label class="filter-label">สายงาน</label>
+      <select id="filterLine-m" onchange="applyFilter()"><option value="">ทั้งหมด</option></select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">สถานะ</label>
+      <select id="filterStatus-m" onchange="applyFilter()">
+        <option value="">ทั้งหมด</option>
+        <option value="__study__">ลาศึกษา</option>
+      </select>
+    </div>
+    <button class="btn-reset" onclick="resetFilter()">↺ รีเซ็ต</button>
+  </div>
+  <div class="cards-wrap" id="cards"><div class="center"><div class="spinner"></div><br>กำลังโหลด...</div></div>
+  <div class="pagination" id="pagination-m"></div>
+</div>
+
+<!-- DESKTOP -->
+<div class="desktop-only" id="desktop-section">
+  <div class="desktop-layout">
+    <div class="sidebar">
+      <h3>ค้นหาและกรอง</h3>
+      <div class="filter-group">
+        <label class="filter-label">ค้นหาชื่อ</label>
+        <div class="search-wrap"><span class="ico">🔍</span><input type="text" id="search-d" placeholder="ค้นหา..." oninput="applyFilter()"></div>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">สายงาน</label>
+        <select id="filterLine-d" onchange="applyFilter()"><option value="">ทั้งหมด</option></select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">สถานะ</label>
+        <select id="filterStatus-d" onchange="applyFilter()">
+          <option value="">ทั้งหมด</option>
+          <option value="__study__">ลาศึกษา</option>
+        </select>
+      </div>
+      <button class="btn-reset-desk" onclick="resetFilter()">↺ รีเซ็ตตัวกรอง</button>
+    </div>
+    <div class="desktop-main">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ชื่อ-สกุล</th><th>สาขา</th><th>เลขประกอบวิชาชีพ</th><th>โทร</th><th>อายุตัว</th><th>อายุงาน</th><th>สถาบันที่จบการศึกษาวุฒิบัตร</th><th>สถานะ</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="8"><div class="center"><div class="spinner"></div><br>กำลังโหลด...</div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="desktop-pagination" id="pagination-d"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyJO32KfdzNpQ9p9WfQpDh-1rDC3feIGLkzBO6hUK8rmhwtx_QXRXh4oBqPPOZhFOd1/exec';
+const PER_PAGE = 20;
+let allData = [], filtered = [], page = 1, statMode = 'all';
+
+// JS-based layout detection (ไม่พึ่ง media query)
+function checkLayout() {
+  const w = window.innerWidth || document.documentElement.clientWidth || screen.width;
+  const mobile = document.getElementById('mobile-section');
+  const desktop = document.getElementById('desktop-section');
+  if (w < 768) {
+    mobile.style.display = 'block';
+    desktop.style.display = 'none';
+  } else {
+    mobile.style.display = 'none';
+    desktop.style.display = 'block';
+  }
+}
+checkLayout();
+window.addEventListener('resize', checkLayout);
+
+function toggleDrawer() { document.getElementById('drawer').classList.toggle('open'); }
+
+function isMobile() {
+  return document.getElementById('mobile-section').style.display !== 'none';
+}
+
+function getVal(id) {
+  const el = document.getElementById(id + (isMobile() ? '-m' : '-d'));
+  return el ? el.value : '';
+}
+function getSearch() {
+  const el = document.getElementById(isMobile() ? 'search-m' : 'search-d');
+  return el ? el.value.trim().toLowerCase() : '';
+}
+
+function loadData() {
+  window._gasCallback = function(json) {
+    if (!json.ok) { showError(); return; }
+    allData = json.data;
+    populateFilters();
+    applyFilter();
+    updateStats();
+  };
+  const s = document.createElement('script');
+  s.src = GAS_URL + '?action=getData&callback=_gasCallback';
+  s.onerror = showError;
+  document.body.appendChild(s);
+}
+
+function showError() {
+  const msg = `<div class="center">❌ โหลดข้อมูลไม่สำเร็จ</div>`;
+  document.getElementById('cards').innerHTML = msg;
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="8">${msg}</td></tr>`;
+}
+
+function populateFilters() {
+  const lines = [...new Set(allData.map(r => r.line).filter(Boolean))].sort();
+  const statuses = [...new Set(allData.map(r => r.status).filter(Boolean))].sort();
+  ['m','d'].forEach(s => {
+    const addOpts = (id, arr) => {
+      const sel = document.getElementById(id+'-'+s);
+      if (!sel) return;
+      arr.forEach(v => { const o = document.createElement('option'); o.value = o.textContent = v; sel.appendChild(o); });
+    };
+    addOpts('filterLine', lines);
+    addOpts('filterStatus', statuses);
+  });
+}
+
+function applyFilter() {
+  const q = getSearch();
+  const line = getVal('filterLine');
+  const status = getVal('filterStatus');
+  filtered = allData.filter(r => {
+    const name = (r.prefix + r.fname + r.lname).toLowerCase();
+    if (q && !name.includes(q)) return false;
+    if (line && r.line !== line) return false;
+    if (status === '__study__') { if (!/^จบ\s*\d/.test(r.status)) return false; }
+    else if (status && r.status !== status) return false;
+    if (statMode === 'active' && !r.status.startsWith('ปฏิบัติงาน')) return false;
+    if (statMode === 'study' && !/^จบ\s*\d/.test(r.status)) return false;
+    return true;
+  });
+  document.getElementById('st-result').textContent = filtered.length;
+  page = 1;
+  render();
+}
+
+function resetFilter() {
+  ['search-m','search-d'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['filterLine','filterStatus'].forEach(id => {
+    ['m','d'].forEach(s => { const el = document.getElementById(id+'-'+s); if(el) el.value=''; });
+  });
+  document.getElementById('drawer').classList.remove('open');
+  statClick('all');
+}
+
+function updateStats() {
+  document.getElementById('st-active').textContent = allData.filter(r => r.status.startsWith('ปฏิบัติงาน')).length;
+  document.getElementById('st-study').textContent = allData.filter(r => /^จบ\s*\d/.test(r.status)).length;
+}
+
+function statClick(mode) {
+  statMode = mode;
+  document.querySelectorAll('.stat').forEach(el => el.classList.remove('active-stat'));
+  document.getElementById(mode==='all'?'stat-result':mode==='active'?'stat-active':'stat-study').classList.add('active-stat');
+  applyFilter();
+}
+
+function sc(s) {
+  return s.startsWith('ปฏิบัติงาน') ? 'badge-status-active' : s==='ลาออก' ? 'badge-status-inactive' : 'badge-status-other';
+}
+
+function render() {
+  const rows = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+  if (!rows.length) {
+    document.getElementById('cards').innerHTML = `<div class="center">ไม่พบข้อมูล</div>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="8"><div class="center">ไม่พบข้อมูล</div></td></tr>`;
+    document.getElementById('pagination-m').innerHTML = '';
+    document.getElementById('pagination-d').innerHTML = '';
+    return;
+  }
+  // cards
+  document.getElementById('cards').innerHTML = rows.map(r => {
+    const fn = `${r.prefix} ${r.fname} ${r.lname}`.trim();
+    return `<div class="card">
+      <div class="card-name">${fn}</div>
+      <div class="card-row">
+        <div class="card-field"><span>เลขวิชาชีพ </span>${r.licNo||'-'}</div>
+        <div class="card-field"><span>โทร </span>${r.tel||'-'}</div>
+      </div>
+      <div class="card-row">
+        <div class="card-field"><span>อายุตัว </span>${r.age||'-'}</div>
+        <div class="card-field"><span>อายุงาน </span>${r.workAge||'-'}</div>
+      </div>
+      ${r.eduInst?`<div class="card-field" style="margin-top:4px"><span>สถาบัน </span>${r.eduInst}</div>`:''}
+      <div class="card-bottom">
+        <span class="card-branch">${r.branch||'-'}</span>
+        <span class="badge ${sc(r.status)}">${r.status||'-'}</span>
+      </div>
+    </div>`;
+  }).join('');
+  // table
+  document.getElementById('tbody').innerHTML = rows.map(r => {
+    const fn = `${r.prefix} ${r.fname} ${r.lname}`.trim();
+    return `<tr><td>${fn}</td><td>${r.branch||'-'}</td><td>${r.licNo||'-'}</td><td>${r.tel||'-'}</td><td>${r.age||'-'}</td><td>${r.workAge||'-'}</td><td>${r.eduInst||'-'}</td><td><span class="badge ${sc(r.status)}">${r.status||'-'}</span></td></tr>`;
+  }).join('');
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = Math.ceil(filtered.length/PER_PAGE);
+  if (total<=1) { document.getElementById('pagination-m').innerHTML=''; document.getElementById('pagination-d').innerHTML=''; return; }
+  const info = `แสดง ${Math.min((page-1)*PER_PAGE+1,filtered.length)}–${Math.min(page*PER_PAGE,filtered.length)} จาก ${filtered.length} รายการ`;
+  let btns = '';
+  for (let p=1;p<=total;p++) {
+    if (total>7 && Math.abs(p-page)>2 && p!==1 && p!==total) { if(p===page-3||p===page+3) btns+=`<button disabled>…</button>`; continue; }
+    btns+=`<button class="${p===page?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  const prev=`<button onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+  const next=`<button onclick="goPage(${page+1})" ${page===total?'disabled':''}>›</button>`;
+  document.getElementById('pagination-m').innerHTML=`<span class="page-info">${info}</span>${prev}${btns}${next}`;
+  document.getElementById('pagination-d').innerHTML=`<span class="page-info-desk">${info}</span>${prev}${btns}${next}`;
+}
+
+function goPage(p) { page=p; render(); window.scrollTo(0,0); }
+
+loadData();
+</script>
+</body>
+</html>
