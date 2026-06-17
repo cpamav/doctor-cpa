@@ -102,11 +102,13 @@
   .table-wrap { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
   table { width: 100%; border-collapse: collapse; min-width: 900px; }
   thead th { background: #2c3e8c; color: white; padding: 12px 14px; text-align: center; font-size: 13px; font-weight: 600; }
-  thead th:first-child { min-width: 240px; }
+  thead th:first-child { width: 50px; }
+  thead th:nth-child(2) { min-width: 240px; }
   tbody tr { border-bottom: 1px solid #f0f2f5; transition: background .15s; }
   tbody tr:hover { background: #f4f6fb; }
   tbody td { padding: 12px 14px; font-size: 14px; vertical-align: middle; }
-  tbody td:first-child { min-width: 240px; white-space: nowrap; }
+  tbody td:first-child { text-align: center; color: #888; }
+  tbody td:nth-child(2) { min-width: 240px; white-space: nowrap; }
   .desktop-pagination { display: flex; gap: 6px; justify-content: flex-end; margin-top: 16px; align-items: center; }
   .desktop-pagination button { padding: 6px 12px; border: 1px solid #dde1ed; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; }
   .desktop-pagination button:hover:not(:disabled) { background: #2c3e8c; color: white; border-color: #2c3e8c; }
@@ -206,8 +208,8 @@
     <div class="desktop-main">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ชื่อ-สกุล</th><th>สาขาหลัก</th><th>เลขประกอบวิชาชีพ</th><th>เบอร์โทร</th><th>อายุตัว</th><th>อายุงาน</th><th>สถาบันที่จบการศึกษาวุฒิบัตร</th><th>สถานะปัจจุบัน</th></tr></thead>
-          <tbody id="tbody"><tr><td colspan="8"><div class="center"><div class="spinner"></div><br>กำลังโหลด...</div></td></tr></tbody>
+          <thead><tr><th style="width:50px;">ลำดับ</th><th>ชื่อ-สกุล</th><th>สาขาหลัก</th><th>เลขประกอบวิชาชีพ</th><th>เบอร์โทร</th><th>อายุตัว</th><th>อายุงาน</th><th>สถาบันที่จบการศึกษาวุฒิบัตร</th><th>สถานะปัจจุบัน</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="9"><div class="center"><div class="spinner"></div><br>กำลังโหลด...</div></td></tr></tbody>
         </table>
       </div>
       <div class="desktop-pagination" id="pagination-d"></div>
@@ -275,7 +277,7 @@ function loadData() {
 function showError() {
   const msg = `<div class="center">❌ โหลดข้อมูลไม่สำเร็จ</div>`;
   document.getElementById('cards').innerHTML = msg;
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="8">${msg}</td></tr>`;
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="9">${msg}</td></tr>`;
 }
 
 function populateFilters() {
@@ -347,16 +349,17 @@ function render() {
   const rows = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
   if (!rows.length) {
     document.getElementById('cards').innerHTML = `<div class="center">ไม่พบข้อมูล</div>`;
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="8"><div class="center">ไม่พบข้อมูล</div></td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="9"><div class="center">ไม่พบข้อมูล</div></td></tr>`;
     document.getElementById('pagination-m').innerHTML = '';
     document.getElementById('pagination-d').innerHTML = '';
     return;
   }
   // cards
-  document.getElementById('cards').innerHTML = rows.map(r => {
+  document.getElementById('cards').innerHTML = rows.map((r, i) => {
     const fn = `${r.prefix} ${r.fname} ${r.lname}`.trim();
+    const no = (page-1)*PER_PAGE + i + 1;
     return `<div class="card">
-      <div class="card-name">${fn}</div>
+      <div class="card-name">${no}. ${fn}</div>
       <div class="card-row">
         <div class="card-field"><span>เลขวิชาชีพ </span>${r.licNo||'-'}</div>
         <div class="card-field"><span>เบอร์โทร </span>${r.tel||'-'}</div>
@@ -373,9 +376,10 @@ function render() {
     </div>`;
   }).join('');
   // table
-  document.getElementById('tbody').innerHTML = rows.map(r => {
+  document.getElementById('tbody').innerHTML = rows.map((r, i) => {
     const fn = `${r.prefix} ${r.fname} ${r.lname}`.trim();
-    return `<tr><td>${fn}</td><td>${r.branch||'-'}</td><td>${r.licNo||'-'}</td><td>${r.tel||'-'}</td><td>${r.age||'-'}</td><td>${r.workAge||'-'}</td><td>${r.eduInst||'-'}</td><td><span class="badge ${sc(r.status)}">${r.status||'-'}</span></td></tr>`;
+    const no = (page-1)*PER_PAGE + i + 1;
+    return `<tr><td>${no}</td><td>${fn}</td><td>${r.branch||'-'}</td><td>${r.licNo||'-'}</td><td>${r.tel||'-'}</td><td>${r.age||'-'}</td><td>${r.workAge||'-'}</td><td>${r.eduInst||'-'}</td><td><span class="badge ${sc(r.status)}">${r.status||'-'}</span></td></tr>`;
   }).join('');
   renderPagination();
 }
@@ -414,9 +418,10 @@ async function exportPDF() {
     wrap.style.width = '1100px';
     wrap.style.fontFamily = "'Sarabun', sans-serif";
 
-    const rows = filtered.map(r => {
+    const rows = filtered.map((r, i) => {
       const fn = `${r.prefix} ${r.fname} ${r.lname}`.trim();
       return `<tr>
+        <td style="padding:8px 10px;border:1px solid #ddd;text-align:center;color:#888;">${i+1}</td>
         <td style="padding:8px 10px;border:1px solid #ddd;white-space:nowrap;">${fn}</td>
         <td style="padding:8px 10px;border:1px solid #ddd;">${r.branch||'-'}</td>
         <td style="padding:8px 10px;border:1px solid #ddd;">${r.licNo||'-'}</td>
@@ -437,6 +442,7 @@ async function exportPDF() {
       <table style="width:100%;border-collapse:collapse;font-size:13px;color:#1a1a2e;">
         <thead>
           <tr style="background:#2c3e8c;color:#fff;">
+            <th style="padding:8px 10px;border:1px solid #ddd;width:40px;">ลำดับ</th>
             <th style="padding:8px 10px;border:1px solid #ddd;text-align:left;">ชื่อ-สกุล</th>
             <th style="padding:8px 10px;border:1px solid #ddd;">สาขาหลัก</th>
             <th style="padding:8px 10px;border:1px solid #ddd;">เลขประกอบวิชาชีพ</th>
