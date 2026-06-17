@@ -25,6 +25,7 @@
 
   /* ===== MOBILE ===== */
   .mobile-only { display: block; }
+  .sticky-top { position: sticky; top: 0; z-index: 40; background: #f0f2f5; }
   .desktop-only { display: none; }
 
   .filter-bar { background: #fff; padding: 10px 16px; border-bottom: 1px solid #e0e4f0; display: flex; gap: 8px; align-items: center; }
@@ -81,7 +82,7 @@
 
   /* ===== DESKTOP ===== */
   .desktop-layout { display: flex; min-height: calc(100vh - 160px); }
-  .sidebar { width: 280px; min-width: 260px; background: #fff; border-right: 1px solid #e0e4f0; padding: 20px 16px; }
+  .sidebar { width: 280px; min-width: 260px; background: #fff; border-right: 1px solid #e0e4f0; padding: 20px 16px; position: sticky; top: 0; align-self: flex-start; max-height: 100vh; overflow-y: auto; }
   .sidebar h3 { font-size: 15px; font-weight: 700; color: #2c3e8c; margin-bottom: 16px; }
   .sidebar .filter-group { margin-bottom: 18px; }
   .sidebar select { font-size: 14px; padding: 9px 12px; }
@@ -114,6 +115,7 @@
 </head>
 <body>
 
+<div class="sticky-top">
 <div class="header">
   <img src="https://raw.githubusercontent.com/abeltonyx/myimg/refs/heads/main/LogoHosOrangeWhite.png">
   <div>
@@ -128,8 +130,8 @@
   <div class="stat" id="stat-study" onclick="statClick('study')"><div class="stat-num" id="st-study">-</div><div class="stat-label">ลาศึกษา</div></div>
 </div>
 
-<!-- MOBILE -->
-<div class="mobile-only" id="mobile-section">
+<!-- MOBILE FILTER BAR (sticky) -->
+<div class="mobile-only" id="mobile-filterbar-wrap">
   <div class="filter-bar">
     <button class="btn-filter-toggle" onclick="toggleDrawer()">☰ กรอง</button>
     <div class="search-wrap-inline">
@@ -156,6 +158,10 @@
     </div>
     <button class="btn-reset" onclick="resetFilter()">↺ รีเซ็ต</button>
   </div>
+</div><!-- /mobile-filterbar-wrap -->
+</div><!-- /sticky-top -->
+
+<div class="mobile-only" id="mobile-cards-section">
   <div class="cards-wrap" id="cards"><div class="center"><div class="spinner"></div><br>กำลังโหลด...</div></div>
   <div class="pagination" id="pagination-m"></div>
 </div>
@@ -211,13 +217,16 @@ const isStudy = r => STUDY_KEYWORDS.some(k => r.status.includes(k));
 // JS-based layout detection (ไม่พึ่ง media query)
 function checkLayout() {
   const w = window.innerWidth || document.documentElement.clientWidth || screen.width;
-  const mobile = document.getElementById('mobile-section');
+  const mobileBar = document.getElementById('mobile-filterbar-wrap');
+  const mobileCards = document.getElementById('mobile-cards-section');
   const desktop = document.getElementById('desktop-section');
   if (w < 768) {
-    mobile.style.display = 'block';
+    mobileBar.style.display = 'block';
+    mobileCards.style.display = 'block';
     desktop.style.display = 'none';
   } else {
-    mobile.style.display = 'none';
+    mobileBar.style.display = 'none';
+    mobileCards.style.display = 'none';
     desktop.style.display = 'block';
   }
 }
@@ -227,7 +236,7 @@ window.addEventListener('resize', checkLayout);
 function toggleDrawer() { document.getElementById('drawer').classList.toggle('open'); }
 
 function isMobile() {
-  return document.getElementById('mobile-section').style.display !== 'none';
+  return document.getElementById('mobile-filterbar-wrap').style.display !== 'none';
 }
 
 function getVal(id) {
