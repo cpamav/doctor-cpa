@@ -53,6 +53,9 @@
   input[list]:focus { outline: none; border-color: #2c3e8c; background: #fff; }
   select:focus { outline: none; border-color: #2c3e8c; }
   .btn-reset { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #f0f2f5; color: #555; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .btn-pdf { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #2c3e8c; color: #fff; font-size: 14px; cursor: pointer; font-family: inherit; margin-top: 8px; }
+  .btn-pdf:hover { background: #1a2563; }
+  .btn-pdf:disabled { opacity: .6; cursor: default; }
 
   /* CARDS */
   .cards-wrap { padding: 12px; }
@@ -92,6 +95,9 @@
   .search-wrap .ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #aaa; }
   .btn-reset-desk { width: 100%; padding: 9px; border: none; border-radius: 8px; background: #f0f2f5; color: #555; font-size: 14px; cursor: pointer; font-family: inherit; margin-top: 4px; }
   .btn-reset-desk:hover { background: #e0e3ea; }
+  .btn-pdf-desk { width: 100%; padding: 9px; border: none; border-radius: 8px; background: #2c3e8c; color: #fff; font-size: 14px; cursor: pointer; font-family: inherit; margin-top: 8px; }
+  .btn-pdf-desk:hover { background: #1a2563; }
+  .btn-pdf-desk:disabled { opacity: .6; cursor: default; }
   .desktop-main { flex: 1; padding: 20px; overflow-x: auto; }
   .table-wrap { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
   table { width: 100%; border-collapse: collapse; min-width: 900px; }
@@ -112,6 +118,8 @@
 <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/cpamav/doctor-cpa/refs/heads/main/icon.png">
 <link rel="icon" href="https://raw.githubusercontent.com/cpamav/doctor-cpa/refs/heads/main/icon.png">
 <meta name="theme-color" content="#2c3e8c">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -157,6 +165,7 @@
       </select>
     </div>
     <button class="btn-reset" onclick="resetFilter()">↺ รีเซ็ต</button>
+    <button class="btn-pdf" onclick="exportPDF()">📄 โหลด PDF (ตามที่กรอง)</button>
   </div>
 </div><!-- /mobile-filterbar-wrap -->
 </div><!-- /sticky-top -->
@@ -192,6 +201,7 @@
         </select>
       </div>
       <button class="btn-reset-desk" onclick="resetFilter()">↺ รีเซ็ตตัวกรอง</button>
+      <button class="btn-pdf-desk" onclick="exportPDF()">📄 โหลด PDF (ตามที่กรอง)</button>
     </div>
     <div class="desktop-main">
       <div class="table-wrap">
@@ -386,6 +396,102 @@ function renderPagination() {
 }
 
 function goPage(p) { page=p; render(); window.scrollTo(0,0); }
+
+async function exportPDF() {
+  if (!filtered.length) { alert('ไม่มีข้อมูลให้โหลด'); return; }
+
+  const btns = document.querySelectorAll('.btn-pdf, .btn-pdf-desk');
+  btns.forEach(b => { b.disabled = true; b.textContent = '⏳ กำลังสร้าง PDF...'; });
+
+  try {
+    // สร้างตารางชั่วคราว (เต็ม ไม่แบ่งหน้า) นอกจอ เพื่อ render เป็นภาพ
+    const wrap = document.createElement('div');
+    wrap.style.position = 'fixed';
+    wrap.style.left = '-9999px';
+    wrap.style.top = '0';
+    wrap.style.background = '#fff';
+    wrap.style.padding = '24px';
+    wrap.style.width = '1100px';
+    wrap.style.fontFamily = "'Sarabun', sans-serif";
+
+    const rows = filtered.map(r => {
+      const fn = `${r.prefix} ${r.fname} ${r.lname}`.trim();
+      return `<tr>
+        <td style="padding:8px 10px;border:1px solid #ddd;white-space:nowrap;">${fn}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;">${r.branch||'-'}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;">${r.licNo||'-'}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;">${r.tel||'-'}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;text-align:center;">${r.age||'-'}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;text-align:center;">${r.workAge||'-'}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;">${r.eduInst||'-'}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;">${r.status||'-'}</td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:18px;font-weight:700;color:#1a2563;">ข้อมูลแพทย์ปฏิบัติงาน และระหว่างลาศึกษา</div>
+        <div style="font-size:13px;color:#666;">โรงพยาบาลเจ้าพระยาอภัยภูเบศร จังหวัดปราจีนบุรี</div>
+        <div style="font-size:12px;color:#999;margin-top:4px;">จำนวนข้อมูลที่กรอง: ${filtered.length} รายการ &nbsp;|&nbsp; วันที่ออกรายงาน: ${new Date().toLocaleDateString('th-TH')}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;color:#1a1a2e;">
+        <thead>
+          <tr style="background:#2c3e8c;color:#fff;">
+            <th style="padding:8px 10px;border:1px solid #ddd;text-align:left;">ชื่อ-สกุล</th>
+            <th style="padding:8px 10px;border:1px solid #ddd;">สาขาหลัก</th>
+            <th style="padding:8px 10px;border:1px solid #ddd;">เลขประกอบวิชาชีพ</th>
+            <th style="padding:8px 10px;border:1px solid #ddd;">เบอร์โทร</th>
+            <th style="padding:8px 10px;border:1px solid #ddd;">อายุตัว</th>
+            <th style="padding:8px 10px;border:1px solid #ddd;">อายุงาน</th>
+            <th style="padding:8px 10px;border:1px solid #ddd;">สถาบันที่จบการศึกษาวุฒิบัตร</th>
+            <th style="padding:8px 10px;border:1px solid #ddd;">สถานะปัจจุบัน</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    document.body.appendChild(wrap);
+
+    const canvas = await html2canvas(wrap, { scale: 2, backgroundColor: '#ffffff' });
+    document.body.removeChild(wrap);
+
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+
+    if (imgH <= pageH) {
+      pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+    } else {
+      // แบ่งภาพเป็นหลายหน้า
+      let renderedHeight = 0;
+      const pageHeightPx = (pageH * canvas.width) / imgW;
+      while (renderedHeight < canvas.height) {
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = Math.min(pageHeightPx, canvas.height - renderedHeight);
+        const ctx = sliceCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, renderedHeight, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+        const sliceData = sliceCanvas.toDataURL('image/png');
+        const sliceImgH = (sliceCanvas.height * imgW) / canvas.width;
+        if (renderedHeight > 0) pdf.addPage();
+        pdf.addImage(sliceData, 'PNG', 0, 0, imgW, sliceImgH);
+        renderedHeight += sliceCanvas.height;
+      }
+    }
+
+    const dateStr = new Date().toISOString().slice(0,10);
+    pdf.save(`ข้อมูลแพทย์ปฏิบัติงาน_${dateStr}.pdf`);
+  } catch (err) {
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message);
+  } finally {
+    btns.forEach(b => { b.disabled = false; b.textContent = '📄 โหลด PDF (ตามที่กรอง)'; });
+  }
+}
 
 loadData();
 </script>
