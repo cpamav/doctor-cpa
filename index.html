@@ -85,7 +85,7 @@
   .table-wrap { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
   table { width: 100%; border-collapse: collapse; min-width: 900px; }
   thead th { background: #2c3e8c; color: white; padding: 12px 14px; text-align: center; font-size: 13px; font-weight: 600; }
-  thead th:first-child { min-width: 240px; text-align: left; }
+  thead th:first-child { min-width: 240px; }
   tbody tr { border-bottom: 1px solid #f0f2f5; transition: background .15s; }
   tbody tr:hover { background: #f4f6fb; }
   tbody td { padding: 12px 14px; font-size: 14px; vertical-align: middle; }
@@ -180,6 +180,10 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyJO32KfdzNpQ9p9WfQpDh-
 const PER_PAGE = 20;
 let allData = [], filtered = [], page = 1, statMode = 'all';
 
+// เพิ่มคำได้เรื่อยๆ ตรงนี้
+const STUDY_KEYWORDS = ['ลาศึกษา', 'จบ'];
+const isStudy = r => STUDY_KEYWORDS.some(k => r.status.includes(k));
+
 // JS-based layout detection (ไม่พึ่ง media query)
 function checkLayout() {
   const w = window.innerWidth || document.documentElement.clientWidth || screen.width;
@@ -253,10 +257,10 @@ function applyFilter() {
     const name = (r.prefix + r.fname + r.lname).toLowerCase();
     if (q && !name.includes(q)) return false;
     if (line && r.line !== line) return false;
-    if (status === '__study__') { if (!/^จบ\s*\d/.test(r.status)) return false; }
+    if (status === '__study__') { if (!isStudy(r)) return false; }
     else if (status && r.status !== status) return false;
     if (statMode === 'active' && !r.status.startsWith('ปฏิบัติงาน')) return false;
-    if (statMode === 'study' && !/^จบ\s*\d/.test(r.status)) return false;
+    if (statMode === 'study' && !isStudy(r)) return false;
     return true;
   });
   document.getElementById('st-result').textContent = filtered.length;
@@ -275,7 +279,7 @@ function resetFilter() {
 
 function updateStats() {
   document.getElementById('st-active').textContent = allData.filter(r => r.status.startsWith('ปฏิบัติงาน')).length;
-  document.getElementById('st-study').textContent = allData.filter(r => /^จบ\s*\d/.test(r.status)).length;
+  document.getElementById('st-study').textContent = allData.filter(r => isStudy(r)).length;
 }
 
 function statClick(mode) {
