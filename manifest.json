@@ -1,0 +1,15 @@
+{
+  "name": "ข้อมูลแพทย์ปฏิบัติงาน",
+  "short_name": "แพทย์ปฏิบัติงาน",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#2c3e8c",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/cpamav/doctor-cpa/refs/heads/main/icon.png",
+      "sizes": "422x409",
+      "type": "image/png"
+    }
+  ]
+}
