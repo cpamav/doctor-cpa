@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ข้อมูลแพทย์ปฏิบัติงาน</title>
+<title>ข้อมูลแพทย์ปฏิบัติงาน และระหว่างลาศึกษา</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -129,7 +129,7 @@
       <select id="filterLine-m" onchange="applyFilter()"><option value="">ทั้งหมด</option></select>
     </div>
     <div class="filter-group">
-      <label class="filter-label">สถานะ</label>
+      <label class="filter-label">สถานะปัจจุบัน</label>
       <select id="filterStatus-m" onchange="applyFilter()">
         <option value="">ทั้งหมด</option>
         <option value="__study__">ลาศึกษา</option>
@@ -155,7 +155,7 @@
         <select id="filterLine-d" onchange="applyFilter()"><option value="">ทั้งหมด</option></select>
       </div>
       <div class="filter-group">
-        <label class="filter-label">สถานะ</label>
+        <label class="filter-label">สถานะปัจจุบัน</label>
         <select id="filterStatus-d" onchange="applyFilter()">
           <option value="">ทั้งหมด</option>
           <option value="__study__">ลาศึกษา</option>
@@ -166,7 +166,7 @@
     <div class="desktop-main">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ชื่อ-สกุล</th><th>สาขา</th><th>เลขประกอบวิชาชีพ</th><th>โทร</th><th>อายุตัว</th><th>อายุงาน</th><th>สถาบันที่จบการศึกษาวุฒิบัตร</th><th>สถานะ</th></tr></thead>
+          <thead><tr><th>ชื่อ-สกุล</th><th>สาขา</th><th>เลขประกอบวิชาชีพ</th><th>เบอร์โทร</th><th>อายุตัว</th><th>อายุงาน</th><th>สถาบันที่จบการศึกษาวุฒิบัตร</th><th>สถานะปัจจุบัน</th></tr></thead>
           <tbody id="tbody"><tr><td colspan="8"><div class="center"><div class="spinner"></div><br>กำลังโหลด...</div></td></tr></tbody>
         </table>
       </div>
@@ -309,7 +309,7 @@ function render() {
       <div class="card-name">${fn}</div>
       <div class="card-row">
         <div class="card-field"><span>เลขวิชาชีพ </span>${r.licNo||'-'}</div>
-        <div class="card-field"><span>โทร </span>${r.tel||'-'}</div>
+        <div class="card-field"><span>เบอร์โทร </span>${r.tel||'-'}</div>
       </div>
       <div class="card-row">
         <div class="card-field"><span>อายุตัว </span>${r.age||'-'}</div>
