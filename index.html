@@ -315,7 +315,7 @@ function render() {
         <div class="card-field"><span>อายุตัว </span>${r.age||'-'}</div>
         <div class="card-field"><span>อายุงาน </span>${r.workAge||'-'}</div>
       </div>
-      ${r.eduInst?`<div class="card-field" style="margin-top:4px"><span>สถาบัน </span>${r.eduInst}</div>`:''}
+      ${r.eduInst?`<div class="card-field" style="margin-top:4px"><span>สถาบันที่จบการศึกษาวุฒิบัตร </span>${r.eduInst}</div>`:''}
       <div class="card-bottom">
         <span class="card-branch">${r.branch||'-'}</span>
         <span class="badge ${sc(r.status)}">${r.status||'-'}</span>
