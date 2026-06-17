@@ -278,7 +278,7 @@ function getSearch() {
 function loadData() {
   window._gasCallback = function(json) {
     if (!json.ok) { showError(); return; }
-    allData = json.data;
+    allData = json.data.filter(r => r.status && r.status.trim() !== '');
     populateFilters();
     applyFilter();
     updateStats();
