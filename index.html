@@ -38,8 +38,18 @@
   .filter-drawer.open { max-height: 400px; padding: 16px; }
 
   .filter-group { margin-bottom: 14px; }
+  .pill-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    padding: 6px 14px; border: 1px solid #dde1ed; border-radius: 20px;
+    background: #f8f9fd; color: #555; font-size: 13px; font-family: inherit;
+    cursor: pointer; transition: all .15s; user-select: none;
+  }
+  .pill:hover { border-color: #2c3e8c; color: #2c3e8c; }
+  .pill.active { background: #2c3e8c; color: #fff; border-color: #2c3e8c; }
   .filter-label { font-size: 12px; color: #666; margin-bottom: 6px; display: block; font-weight: 600; }
   select { width: 100%; padding: 10px 12px; border: 1px solid #dde1ed; border-radius: 8px; font-size: 15px; font-family: inherit; background: #f8f9fd; color: #333; cursor: pointer; }
+  input[list] { width: 100%; padding: 10px 12px; border: 1px solid #dde1ed; border-radius: 8px; font-size: 15px; font-family: inherit; background: #f8f9fd; color: #333; }
+  input[list]:focus { outline: none; border-color: #2c3e8c; background: #fff; }
   select:focus { outline: none; border-color: #2c3e8c; }
   .btn-reset { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #f0f2f5; color: #555; font-size: 14px; cursor: pointer; font-family: inherit; }
 
@@ -129,6 +139,11 @@
       <select id="filterLine-m" onchange="applyFilter()"><option value="">ทั้งหมด</option></select>
     </div>
     <div class="filter-group">
+      <label class="filter-label">สาขาหลัก</label>
+      <input type="text" id="filterBranch-m" list="branchList-m" placeholder="ทั้งหมด (พิมพ์เพื่อค้นหา)" oninput="applyFilter()" autocomplete="off">
+      <datalist id="branchList-m"></datalist>
+    </div>
+    <div class="filter-group">
       <label class="filter-label">สถานะปัจจุบัน</label>
       <select id="filterStatus-m" onchange="applyFilter()">
         <option value="">ทั้งหมด</option>
@@ -155,6 +170,11 @@
         <select id="filterLine-d" onchange="applyFilter()"><option value="">ทั้งหมด</option></select>
       </div>
       <div class="filter-group">
+        <label class="filter-label">สาขาหลัก</label>
+        <input type="text" id="filterBranch-d" list="branchList-d" placeholder="ทั้งหมด (พิมพ์เพื่อค้นหา)" oninput="applyFilter()" autocomplete="off">
+        <datalist id="branchList-d"></datalist>
+      </div>
+      <div class="filter-group">
         <label class="filter-label">สถานะปัจจุบัน</label>
         <select id="filterStatus-d" onchange="applyFilter()">
           <option value="">ทั้งหมด</option>
@@ -166,7 +186,7 @@
     <div class="desktop-main">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ชื่อ-สกุล</th><th>สาขา</th><th>เลขประกอบวิชาชีพ</th><th>เบอร์โทร</th><th>อายุตัว</th><th>อายุงาน</th><th>สถาบันที่จบการศึกษาวุฒิบัตร</th><th>สถานะปัจจุบัน</th></tr></thead>
+          <thead><tr><th>ชื่อ-สกุล</th><th>สาขาหลัก</th><th>เลขประกอบวิชาชีพ</th><th>เบอร์โทร</th><th>อายุตัว</th><th>อายุงาน</th><th>สถาบันที่จบการศึกษาวุฒิบัตร</th><th>สถานะปัจจุบัน</th></tr></thead>
           <tbody id="tbody"><tr><td colspan="8"><div class="center"><div class="spinner"></div><br>กำลังโหลด...</div></td></tr></tbody>
         </table>
       </div>
@@ -236,6 +256,7 @@ function showError() {
 }
 
 function populateFilters() {
+  const branches = [...new Set(allData.map(r => r.branch).filter(Boolean))].sort();
   const lines = [...new Set(allData.map(r => r.line).filter(Boolean))].sort();
   const statuses = [...new Set(allData.map(r => r.status).filter(Boolean))].sort();
   ['m','d'].forEach(s => {
@@ -246,16 +267,21 @@ function populateFilters() {
     };
     addOpts('filterLine', lines);
     addOpts('filterStatus', statuses);
+
+    const dl = document.getElementById('branchList-'+s);
+    if (dl) branches.forEach(v => { const o = document.createElement('option'); o.value = v; dl.appendChild(o); });
   });
 }
 
 function applyFilter() {
   const q = getSearch();
   const line = getVal('filterLine');
+  const branch = getVal('filterBranch');
   const status = getVal('filterStatus');
   filtered = allData.filter(r => {
     const name = (r.prefix + r.fname + r.lname).toLowerCase();
     if (q && !name.includes(q)) return false;
+    if (branch && !r.branch.includes(branch)) return false;
     if (line && r.line !== line) return false;
     if (status === '__study__') { if (!isStudy(r)) return false; }
     else if (status && r.status !== status) return false;
@@ -264,13 +290,14 @@ function applyFilter() {
     return true;
   });
   document.getElementById('st-result').textContent = filtered.length;
+  updateStats();
   page = 1;
   render();
 }
 
 function resetFilter() {
   ['search-m','search-d'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  ['filterLine','filterStatus'].forEach(id => {
+  ['filterLine','filterBranch','filterStatus'].forEach(id => {
     ['m','d'].forEach(s => { const el = document.getElementById(id+'-'+s); if(el) el.value=''; });
   });
   document.getElementById('drawer').classList.remove('open');
@@ -278,8 +305,8 @@ function resetFilter() {
 }
 
 function updateStats() {
-  document.getElementById('st-active').textContent = allData.filter(r => r.status.startsWith('ปฏิบัติงาน')).length;
-  document.getElementById('st-study').textContent = allData.filter(r => isStudy(r)).length;
+  document.getElementById('st-active').textContent = filtered.filter(r => r.status.startsWith('ปฏิบัติงาน')).length;
+  document.getElementById('st-study').textContent = filtered.filter(r => isStudy(r)).length;
 }
 
 function statClick(mode) {
